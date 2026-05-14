@@ -1,8 +1,8 @@
 import numpy as np
 from scipy.cluster.vq import kmeans2
 from scipy.spatial.distance import cdist
-import matplotlib.pyplot as plt
-
+import faiss
+#retrieve files and add them to a numpy array
 def retrievefvecs(file):
 
     data=np.fromfile(file,dtype='float32')
@@ -22,23 +22,24 @@ def retriveivecs(file):
 
     return data[:, 1:].copy()
 
-def invertedindex(S):
 
-    samplesize=min(10000,S.shape[0])
-    trainingsample = S[np.random.permutation(S.shape[0])[:samplesize]]
+#inverted index creation
+def invertedindex(S,train,nofclusters):
 
-    centroids,_=kmeans2(trainingsample,80,minit='points')
+    centroids,_=kmeans2(train,nofclusters,minit='points')
 
     invertedindex={i: [] for i in range(80)}
 
-    chunks=100000
+    chunks=train.shape[0]
 
+    #χωρισμος των δεδομενων σε chunks
     for i in range(0,S.shape[0],chunks):
-        
-        chunk=S[i:i + chunks]
+       
+        chunk=S[i :i+chunks]
 
         distances=cdist(chunk,centroids,metric='euclidean')
-        #closest centroids
+       
+       #closest centroids
         nearest=np.argmin(distances,axis=1)
         
         for j, centroid_id in enumerate(nearest):
@@ -51,6 +52,8 @@ def invertedindex(S):
     return centroids,invertedindex
 
 
+dimension=128
+clusters = 80 #based on elbow rule
 
 S=sift_base=retrievefvecs("sift/sift_base.fvecs")
 train=sift_learn=retrievefvecs("sift/sift_learn.fvecs")
@@ -58,6 +61,6 @@ Q=sift_query=retrievefvecs("sift/sift_query.fvecs")
 ground_truth=sift_groundtruth=retriveivecs("sift/sift_groundtruth.ivecs")
 
 
+centroids,index= invertedindex(S,train,clusters)
 
-centroids,index = invertedindex(S)
-print(type(index))
+print(index)

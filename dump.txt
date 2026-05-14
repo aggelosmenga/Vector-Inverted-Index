@@ -1,0 +1,36 @@
+faissindex= faiss.IndexIVFFlat(faiss.IndexFlatL2(128),128,80,faiss.METRIC_L2)
+
+faissindex.train(S)
+
+faissindex.add(S)
+
+faissindex.nprobe=4
+k=5
+istances, approx_results = faissindex.search(Q, 5)
+
+
+print("\nCalculating Accuracy...")
+true_neighbors = ground_truth[:, :k]
+num_queries = Q.shape[0]
+    
+total_matches = sum(len(np.intersect1d(true_neighbors[i], approx_results[i])) for i in range(num_queries))
+recall = (total_matches / (num_queries * k)) * 100
+
+print("==================================")
+print("        FINAL RESULTS             ")
+print("==================================")
+print(f"Queries processed: {num_queries}")
+print(f"Target matches:    {num_queries * k}")
+print(f"Actual matches:    {total_matches}")
+print(f"Recall (Accuracy): {recall:.2f}%")
+
+index=faiss.IndexIVFFlat(faiss.IndexFlatL2(dimension),dimension,clusters,faiss.METRIC_L2)
+
+index.train(S)
+index.add(S)
+
+
+distances,indices=index.search(Q,k=5)
+
+print(indices)
+"""
