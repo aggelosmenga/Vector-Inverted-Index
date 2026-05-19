@@ -2,6 +2,7 @@ import numpy as np
 from scipy.cluster.vq import kmeans2
 from scipy.spatial.distance import cdist
 import faiss
+
 #retrieve files and add them to a numpy array
 def retrievefvecs(file):
 
@@ -46,10 +47,18 @@ def invertedindex(S,train,nofclusters):
             invertedindex[centroid_id].append(i + j)
 
     
-    for i in range(80):
+    for i in range(nofclusters):
         invertedindex[i]=np.array(invertedindex[i],dtype=np.int32)
 
     return centroids,invertedindex
+
+def nearestcentroid(q,centers :np.ndarray):
+    #returns index of closest centroid
+    dist=np.linalg.norm(centers-q,axis=1)
+    ind=np.argmin(dist)
+    print(min(dist))
+    return ind
+
 
 
 dimension=128
@@ -62,5 +71,15 @@ ground_truth=sift_groundtruth=retriveivecs("sift/sift_groundtruth.ivecs")
 
 
 centroids,index= invertedindex(S,train,clusters)
+#inverted index krataei ta keys toy S pinaka !!!!!!
 
-print(index)
+approximate_results=[]
+
+nc=nearestcentroid(Q[0],centroids)
+print(nc)
+print(np.linalg.norm(centroids[nc]-Q[0]))
+
+
+
+#for i in len(Q):
+#   nc=nearestcentroid(Q[i],centroids)
