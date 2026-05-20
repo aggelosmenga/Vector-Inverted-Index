@@ -52,12 +52,18 @@ def invertedindex(S,train,nofclusters):
 
     return centroids,invertedindex
 
-def nearestcentroid(q,centers :np.ndarray):
+def nearestcentroid(q,centroids :np.ndarray):
     #returns index of closest centroid
-    dist=np.linalg.norm(centers-q,axis=1)
+    dist=np.linalg.norm(centroids-q,axis=1)
     ind=np.argmin(dist)
     print(min(dist))
     return ind
+
+def ApproximateNearestNeighbors(q,centroids:np.ndarray,S:np.ndarray,k):
+
+
+
+    return
 
 
 
@@ -75,11 +81,3 @@ centroids,index= invertedindex(S,train,clusters)
 
 approximate_results=[]
 
-nc=nearestcentroid(Q[0],centroids)
-print(nc)
-print(np.linalg.norm(centroids[nc]-Q[0]))
-
-
-
-#for i in len(Q):
-#   nc=nearestcentroid(Q[i],centroids)
