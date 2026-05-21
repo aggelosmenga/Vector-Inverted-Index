@@ -1,7 +1,7 @@
 import numpy as np
 from scipy.cluster.vq import kmeans2
 from scipy.spatial.distance import cdist
-import faiss
+from sklearn.neighbors import NearestNeighbors
 
 #retrieve files and add them to a numpy array
 def retrievefvecs(file):
@@ -29,7 +29,7 @@ def invertedindex(S,train,nofclusters):
 
     centroids,_=kmeans2(train,nofclusters,minit='points')
 
-    invertedindex={i: [] for i in range(80)}
+    invertedindex={i: [] for i in range(nofclusters)}
 
     chunks=train.shape[0]
 
@@ -59,13 +59,19 @@ def nearestcentroid(q,centroids :np.ndarray):
     print(min(dist))
     return ind
 
-def ApproximateNearestNeighbors(q,centroids:np.ndarray,S:np.ndarray,k):
-
-
-
-    return
-
-
+def ApproximateNearestNeighbors(q,index:dict,centroids:np.ndarray,S:np.ndarray,k):
+    nn=NearestNeighbors(n_neighbors=k,algorithm='auto',metric='euclidean',p=2)
+    
+    cent=nearestcentroid(q,centroids)
+    basekeys=index[cent]
+    
+    vectorsforcheck=S[basekeys]
+    nn.fit(vectorsforcheck)
+    
+    distances,vectorindices=nn.kneighbors(q.reshape(1,-1))
+    
+    return S[vectorindices]
+    
 
 dimension=128
 clusters = 80 #based on elbow rule
@@ -78,6 +84,6 @@ ground_truth=sift_groundtruth=retriveivecs("sift/sift_groundtruth.ivecs")
 
 centroids,index= invertedindex(S,train,clusters)
 #inverted index krataei ta keys toy S pinaka !!!!!!
-
+print(nearestcentroid(Q[0],centroids))
 approximate_results=[]
-
+test=ApproximateNearestNeighbors(Q[0],index,centroids,S,k=5)

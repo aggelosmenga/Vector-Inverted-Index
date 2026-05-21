@@ -34,3 +34,35 @@ distances,indices=index.search(Q,k=5)
 
 print(indices)
 """
+
+
+
+
+
+def elbowrule(base, max_k=200):
+    step = 20
+    samplesize = min(20000, base.shape[0])
+    sample = base[np.random.permutation(base.shape[0])[:samplesize]]
+
+    kvals = list(range(20, max_k + 1, step))
+    distortions = []
+
+    print("Evaluating Elbow Rule (Percentage Improvement)")
+    print("-" * 55)
+    print(f"{'Clusters (k)':<15} | {'Distortion':<15} | {'Improvement %':<15}")
+    print("-" * 55)
+
+    for i, k in enumerate(kvals):
+        centroids, distortion = kmeans(sample, k)
+        distortions.append(distortion)
+
+        if i == 0:
+            # First run acts as the baseline, so there is no previous data to compare
+            print(f"{k:<15} | {distortion:<15.4f} | N/A (Baseline)")
+        else:
+            prev_distortion = distortions[i - 1]
+            
+            # Calculate the percentage drop in distortion compared to the last step
+            improvement = ((prev_distortion - distortion) / prev_distortion) * 100
+            
+            print(f"{k:<15} | {distortion:<15.4f} | -{improvement:.2f}%")
