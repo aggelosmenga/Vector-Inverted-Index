@@ -2,7 +2,6 @@ import numpy as np
 from scipy.cluster.vq import kmeans2
 from scipy.spatial.distance import cdist
 from sklearn.neighbors import NearestNeighbors
-
 #retrieve files and add them to a numpy array
 def retrievefvecs(file):
 
@@ -52,26 +51,29 @@ def invertedindex(S,train,nofclusters):
 
     return centroids,invertedindex
 
-def nearestcentroid(q,centroids :np.ndarray):
-    #returns index of closest centroid
+def nearestcentroids(q,centroids :np.ndarray,M:int):
+    #returns index of closest centroids
     dist=np.linalg.norm(centroids-q,axis=1)
-    ind=np.argmin(dist)
+    ind=np.argmin(dist)[:M] #returns m closest centroids
     print(min(dist))
     return ind
 
 def ApproximateNearestNeighbors(q,index:dict,centroids:np.ndarray,S:np.ndarray,k):
-    nn=NearestNeighbors(n_neighbors=k,algorithm='auto',metric='euclidean',p=2)
     
-    cent=nearestcentroid(q,centroids)
-    basekeys=index[cent]
+    clusters=nearestcentroids(q,centroids,M=4)
+    basekeys=index[clusters]
     
     vectorsforcheck=S[basekeys]
-    nn.fit(vectorsforcheck)
+
+    distances=np.linalg.norm(vectorsforcheck-q,axis=1)
+
+    vectorindices=np.argsort(distances)[:k]
+    return basekeys[vectorindices]
     
-    distances,vectorindices=nn.kneighbors(q.reshape(1,-1))
-    
-    return S[vectorindices]
-    
+def PreciseNearestNeighbors(q,index:dict, centroids:np.ndarray,S:np.ndarray,k):
+
+    return
+
 
 dimension=128
 clusters = 80 #based on elbow rule
@@ -84,6 +86,8 @@ ground_truth=sift_groundtruth=retriveivecs("sift/sift_groundtruth.ivecs")
 
 centroids,index= invertedindex(S,train,clusters)
 #inverted index krataei ta keys toy S pinaka !!!!!!
-print(nearestcentroid(Q[0],centroids))
-approximate_results=[]
+print(nearestcentroids(Q[0],centroids,M=4))
 test=ApproximateNearestNeighbors(Q[0],index,centroids,S,k=5)
+print(S[test])
+approximateresults=S[test]
+print(approximateresults.shape)

@@ -66,3 +66,10 @@ def elbowrule(base, max_k=200):
             improvement = ((prev_distortion - distortion) / prev_distortion) * 100
             
             print(f"{k:<15} | {distortion:<15.4f} | -{improvement:.2f}%")
+
+
+
+            Μ= Omades cluster
+            P= ola ta clusters M<P eksetazei ta M kontinotera clusters
+
+            m is for approximate NN
