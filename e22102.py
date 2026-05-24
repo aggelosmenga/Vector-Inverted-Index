@@ -54,21 +54,26 @@ def invertedindex(S,train,nofclusters):
 def nearestcentroids(q,centroids :np.ndarray,M:int):
     #returns index of closest centroids
     dist=np.linalg.norm(centroids-q,axis=1)
-    ind=np.argmin(dist)[:M] #returns m closest centroids
-    print(min(dist))
+    ind=np.argsort(dist)[:M] #returns m closest centroids
     return ind
 
-def ApproximateNearestNeighbors(q,index:dict,centroids:np.ndarray,S:np.ndarray,k):
-    
-    clusters=nearestcentroids(q,centroids,M=4)
-    basekeys=index[clusters]
-    
-    vectorsforcheck=S[basekeys]
+def ApproximateNearestNeighbors(q:np.ndarray,index:dict,centroids:np.ndarray,S:np.ndarray,k):
+    approxresults=[]
+    for i in range(len(q)):
 
-    distances=np.linalg.norm(vectorsforcheck-q,axis=1)
+        clusters=nearestcentroids(q[i],centroids,M=4)
+        
+        basekeys=np.concatenate([index[c] for c in clusters])
 
-    vectorindices=np.argsort(distances)[:k]
-    return basekeys[vectorindices]
+        #print(f"these are the basekeys",basekeys)
+        
+        vectorsforcheck=S[basekeys]
+
+        distances=np.linalg.norm(vectorsforcheck-q[i],axis=1)
+        #argument sort dhladh apothikeyei toys deiktes toy S poy exoyn to k kontinotero dianysma me to q[i] DEN EPISTREFEI TO VECTOR gia logoys mnhmh ypothetw lol 
+        vectorindices=np.argsort(distances)[:k]
+        approxresults.append(basekeys[vectorindices])
+    return approxresults
     
 def PreciseNearestNeighbors(q,index:dict, centroids:np.ndarray,S:np.ndarray,k):
 
@@ -87,7 +92,7 @@ ground_truth=sift_groundtruth=retriveivecs("sift/sift_groundtruth.ivecs")
 centroids,index= invertedindex(S,train,clusters)
 #inverted index krataei ta keys toy S pinaka !!!!!!
 print(nearestcentroids(Q[0],centroids,M=4))
-test=ApproximateNearestNeighbors(Q[0],index,centroids,S,k=5)
-print(S[test])
+test=ApproximateNearestNeighbors(Q,index,centroids,S,k=5)
+print(len(test),len(test[0]))
 approximateresults=S[test]
 print(approximateresults.shape)
