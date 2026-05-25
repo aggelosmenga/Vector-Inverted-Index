@@ -73,3 +73,11 @@ def elbowrule(base, max_k=200):
             P= ola ta clusters M<P eksetazei ta M kontinotera clusters
 
             m is for approximate NN
+
+
+
+def nearestcentroids(q,centroids :np.ndarray,M:int):
+    #returns index of closest centroids
+    dist=np.linalg.norm(centroids-q,axis=1)
+    ind=np.argsort(dist)[:M] #returns m closest centroids
+    return ind

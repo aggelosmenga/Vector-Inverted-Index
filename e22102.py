@@ -51,28 +51,44 @@ def invertedindex(S,train,nofclusters):
 
     return centroids,invertedindex
 
-def nearestcentroids(q,centroids :np.ndarray,M:int):
-    #returns index of closest centroids
-    dist=np.linalg.norm(centroids-q,axis=1)
-    ind=np.argsort(dist)[:M] #returns m closest centroids
-    return ind
 
-def ApproximateNearestNeighbors(q:np.ndarray,index:dict,centroids:np.ndarray,S:np.ndarray,k):
+def ApproximateNearestNeighbors(q:np.ndarray,index:dict,centroids:np.ndarray,S:np.ndarray,k,e=1.5):
     approxresults=[]
     for i in range(len(q)):
 
-        clusters=nearestcentroids(q[i],centroids,M=4)
+        clusterdistances=np.linalg.norm(centroids-q[i],axis=1)
         
-        basekeys=np.concatenate([index[c] for c in clusters])
+        sortedclusters=np.argsort(clusterdistances)
 
+        dmin=clusterdistances[sortedclusters[0]]
+
+        #λογικη πισω απο την αυτοματοποιηση:
+            #1+ε Approximate nearest neighbor search για τα κοντινοτερα clusters
+            #οριζουμε dmin το κοντινοτερο διανυσμα στο query μας
+            #οριζουμε ενα tolerance ratio=1.5,αυτο σημαινει
+            #για καθε cluster ελεγχουμε αν ισχυει η ανισοτητα d(q,c(m)) <= e * dmin 
+            #αν ισχυει τοτε εισαγουμε το cluster στην αναζητηση, δηλαδη Μ = Μ+1
+
+        clusters=[]
+        for clustid in sortedclusters:
+            dist=clusterdistances[clustid]
+            if dist > (dmin * e): break
+        
+            clusters.append(clustid)
+        #cluster index
+        print("these are the clusters: ",clusters,len(clusters))
+        basekeys=np.concatenate([index[c] for c in clusters])
+        
         #print(f"these are the basekeys",basekeys)
         
         vectorsforcheck=S[basekeys]
 
         distances=np.linalg.norm(vectorsforcheck-q[i],axis=1)
         #argument sort dhladh apothikeyei toys deiktes toy S poy exoyn to k kontinotero dianysma me to q[i] DEN EPISTREFEI TO VECTOR gia logoys mnhmh ypothetw lol 
+        
         vectorindices=np.argsort(distances)[:k]
         approxresults.append(basekeys[vectorindices])
+    
     return approxresults
     
 def PreciseNearestNeighbors(q,index:dict, centroids:np.ndarray,S:np.ndarray,k):
@@ -91,8 +107,9 @@ ground_truth=sift_groundtruth=retriveivecs("sift/sift_groundtruth.ivecs")
 
 centroids,index= invertedindex(S,train,clusters)
 #inverted index krataei ta keys toy S pinaka !!!!!!
-print(nearestcentroids(Q[0],centroids,M=4))
-test=ApproximateNearestNeighbors(Q,index,centroids,S,k=5)
-print(len(test),len(test[0]))
-approximateresults=S[test]
+test=ApproximateNearestNeighbors(Q[3:4],index,centroids,S,k=5)
+
+
+
+approximateresults=S[test[0]]
 print(approximateresults.shape)
