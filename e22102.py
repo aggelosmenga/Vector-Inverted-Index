@@ -1,7 +1,7 @@
 import numpy as np
 from scipy.cluster.vq import kmeans2
 from scipy.spatial.distance import cdist
-from sklearn.neighbors import NearestNeighbors
+import time
 #retrieve files and add them to a numpy array
 def retrievefvecs(file):
 
@@ -54,6 +54,7 @@ def invertedindex(S,train,nofclusters):
 
 def ApproximateNearestNeighbors(q:np.ndarray,index:dict,centroids:np.ndarray,S:np.ndarray,k,e=1.5):
     approxresults=[]
+    computations=0
     for i in range(len(q)):
 
         clusterdistances=np.linalg.norm(centroids-q[i],axis=1)
@@ -79,7 +80,7 @@ def ApproximateNearestNeighbors(q:np.ndarray,index:dict,centroids:np.ndarray,S:n
         print("these are the clusters: ",clusters,len(clusters))
         basekeys=np.concatenate([index[c] for c in clusters])
         
-        #print(f"these are the basekeys",basekeys)
+        computations+=len(basekeys)
         
         vectorsforcheck=S[basekeys]
 
@@ -89,15 +90,77 @@ def ApproximateNearestNeighbors(q:np.ndarray,index:dict,centroids:np.ndarray,S:n
         vectorindices=np.argsort(distances)[:k]
         approxresults.append(basekeys[vectorindices])
     
-    return approxresults
+    return approxresults,computations
     
 def PreciseNearestNeighbors(q,index:dict, centroids:np.ndarray,S:np.ndarray,k):
+    results=[]
+    basekeys=np.concatenate(list(index.values()))
+    
+    computations=len(q)*len(basekeys)
 
-    return
+    for i in range(len(q)):
+        distances=np.linalg.norm(S[basekeys]-q[i],axis=1)
+
+        vectorindices=np.argsort(distances)[:k]
+
+        results.append(basekeys[vectorindices])
+
+    return results,computations
+
+
+def evaluations(q,index,centroids,S,groundtruth,k):
+    print("Testing phase of algorithms:")
+    print("For approximate nearest neighbors:")
+    annstart_time=time.time()
+    ann,anncomp=ApproximateNearestNeighbors(q,index,centroids,S,k)
+    ann_time=time.time()-annstart_time
+    annqps= len(q) / ann_time
+
+    #recall via groundtruth
+    matches=0
+    for i in range(len(q)):
+        trueneighbors=groundtruth[i][:k]
+        neighborsann=ann[i]
+
+        common = np.intersect1d(trueneighbors,neighborsann)
+        matches+=len(common)
+
+    recall_percentage= (matches / (len(q) * k)) *100
+
+    print("-" * 50)
+    print("--- APPROXIMATE ALGORITHM (IVF) ---")
+    print(f"Χρόνος Εκτέλεσης             : {ann_time:.3f} δευτερόλεπτα")
+    print(f"Ταχύτητα (QPS)               : {annqps:.1f} queries/sec")
+    print(f"Υπολογισμένες Αποστάσεις     : {anncomp:,}")
+    print(f"Ανάκληση (Recall)            : {recall_percentage:.2f}%")
+    print("="*50)
+    print("for Precise Nearest Neighbors")
+    pnnstart=time.time()
+    pnn,pnncomp=PreciseNearestNeighbors(q,index, centroids,S,k)
+    pnn_time=time.time()-pnnstart
+    pnnqps= len(q) / pnn_time
+
+    pnnmatches=0
+    for i in range(len(q)):
+        truepnn=groundtruth[i][:k]
+        pnnNeighbors=pnn[i]
+
+        commonpnn=np.intersect1d(truepnn,pnnNeighbors)
+        pnnmatches+=len(commonpnn)
+
+        pnnrecall=(pnnmatches / (len(q) * k)) *100
+
+    print("-" * 50)
+    print("--- PRECISE ALGORITHM ---")
+    print(f"Χρόνος Εκτέλεσης             : {pnn_time:.3f} δευτερόλεπτα")
+    print(f"Ταχύτητα (QPS)               : {pnnqps:.1f} queries/sec")
+    print(f"Υπολογισμένες Αποστάσεις     : {pnncomp:,}")
+    print(f"Ανάκληση (Recall)            : {pnnrecall:.2f}%")
+    print("="*50)
 
 
 dimension=128
-clusters = 80 #based on elbow rule
+clusters=1000
 
 S=sift_base=retrievefvecs("sift/sift_base.fvecs")
 train=sift_learn=retrievefvecs("sift/sift_learn.fvecs")
@@ -107,9 +170,5 @@ ground_truth=sift_groundtruth=retriveivecs("sift/sift_groundtruth.ivecs")
 
 centroids,index= invertedindex(S,train,clusters)
 #inverted index krataei ta keys toy S pinaka !!!!!!
-test=ApproximateNearestNeighbors(Q[3:4],index,centroids,S,k=5)
-
-
-
-approximateresults=S[test[0]]
-print(approximateresults.shape)
+evaluations(Q[:500],index,centroids,S,ground_truth[:500],k=100)
+#print("s",len(S),"Q",len(Q),"learn",len(sift_learn),"groundtruth",len(ground_truth))

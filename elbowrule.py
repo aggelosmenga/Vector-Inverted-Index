@@ -34,7 +34,7 @@ def elbowrule(base,max=200):
         centroids,distortion=kmeans(sample,k)
 
         distortions.append(distortion)
-        print(f"  -> Tested k={k} | Distortion: {distortion:.4f}")
+        
 
     plt.figure(figsize=(10, 6))
     plt.plot(kvals, distortions, marker='o', linestyle='-', linewidth=2)
