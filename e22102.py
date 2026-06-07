@@ -1,7 +1,7 @@
 import numpy as np
-from scipy.cluster.vq import kmeans2
-from scipy.spatial.distance import cdist
 import time
+from sklearn.neighbors import NearestNeighbors
+import pickle as pkl
 #retrieve files and add them to a numpy array
 def retrievefvecs(file):
 
@@ -24,6 +24,7 @@ def retriveivecs(file):
 
 
 #inverted index creation
+""""
 def invertedindex(S,train,nofclusters):
 
     centroids,_=kmeans2(train,nofclusters,minit='points')
@@ -49,12 +50,14 @@ def invertedindex(S,train,nofclusters):
     for i in range(nofclusters):
         invertedindex[i]=np.array(invertedindex[i],dtype=np.int32)
 
-    return centroids,invertedindex
-
+    return centroids,invertedindex"
+"""
 
 def ApproximateNearestNeighbors(q:np.ndarray,index:dict,centroids:np.ndarray,S:np.ndarray,k,e=1.5):
     approxresults=[]
     computations=0
+    knn = NearestNeighbors(n_neighbors=k,algorithm='brute',n_jobs=-1)
+    clusternn= NearestNeighbors(n_neighbors=1000,algorithm='brute',n_jobs=-1)
     for i in range(len(q)):
 
         clusterdistances=np.linalg.norm(centroids-q[i],axis=1)
@@ -77,40 +80,33 @@ def ApproximateNearestNeighbors(q:np.ndarray,index:dict,centroids:np.ndarray,S:n
         
             clusters.append(clustid)
         #cluster index
-        print("these are the clusters: ",clusters,len(clusters))
+        print(len(clusters))
         basekeys=np.concatenate([index[c] for c in clusters])
         
         computations+=len(basekeys)
         
         vectorsforcheck=S[basekeys]
-
-        distances=np.linalg.norm(vectorsforcheck-q[i],axis=1)
+        knn.fit(vectorsforcheck)
+        distances,vectorindices= knn.kneighbors(q[i].reshape(1,-1))
+        #distances=np.linalg.norm(vectorsforcheck-q[i],axis=1)
         #argument sort dhladh apothikeyei toys deiktes toy S poy exoyn to k kontinotero dianysma me to q[i] DEN EPISTREFEI TO VECTOR gia logoys mnhmh ypothetw lol 
         
-        vectorindices=np.argsort(distances)[:k]
+        #vectorindices=np.argsort(distances)[:k]
         approxresults.append(basekeys[vectorindices])
     
     return approxresults,computations
     
 def PreciseNearestNeighbors(q,index:dict, centroids:np.ndarray,S:np.ndarray,k):
-    results=[]
-    basekeys=np.concatenate(list(index.values()))
+    computations=len(q) * len(S)
     
-    computations=len(q)*len(basekeys)
+    knn = NearestNeighbors(n_neighbors=k,algorithm='brute',n_jobs=-1)
+    knn.fit(S)
+    distances,indices =knn.kneighbors(q)
 
-    for i in range(len(q)):
-        distances=np.linalg.norm(S[basekeys]-q[i],axis=1)
-
-        vectorindices=np.argsort(distances)[:k]
-
-        results.append(basekeys[vectorindices])
-
-    return results,computations
-
+    return indices,computations
 
 def evaluations(q,index,centroids,S,groundtruth,k):
     print("Testing phase of algorithms:")
-    print("For approximate nearest neighbors:")
     annstart_time=time.time()
     ann,anncomp=ApproximateNearestNeighbors(q,index,centroids,S,k)
     ann_time=time.time()-annstart_time
@@ -127,14 +123,14 @@ def evaluations(q,index,centroids,S,groundtruth,k):
 
     recall_percentage= (matches / (len(q) * k)) *100
 
-    print("-" * 50)
-    print("--- APPROXIMATE ALGORITHM (IVF) ---")
-    print(f"Χρόνος Εκτέλεσης             : {ann_time:.3f} δευτερόλεπτα")
-    print(f"Ταχύτητα (QPS)               : {annqps:.1f} queries/sec")
-    print(f"Υπολογισμένες Αποστάσεις     : {anncomp:,}")
-    print(f"Ανάκληση (Recall)            : {recall_percentage:.2f}%")
+    print("=" * 50)
+    print("For approximate nearest neighbors:")
+    print(f"Running Time            {ann_time:.3f} Seconds")
+    print(f"Speed                   {annqps:.1f} queries/sec")
+    print(f"N of calculations       {anncomp:,}")
+    print(f"Recall                  {recall_percentage:.2f}%")
     print("="*50)
-    print("for Precise Nearest Neighbors")
+    
     pnnstart=time.time()
     pnn,pnncomp=PreciseNearestNeighbors(q,index, centroids,S,k)
     pnn_time=time.time()-pnnstart
@@ -150,12 +146,12 @@ def evaluations(q,index,centroids,S,groundtruth,k):
 
         pnnrecall=(pnnmatches / (len(q) * k)) *100
 
-    print("-" * 50)
-    print("--- PRECISE ALGORITHM ---")
-    print(f"Χρόνος Εκτέλεσης             : {pnn_time:.3f} δευτερόλεπτα")
-    print(f"Ταχύτητα (QPS)               : {pnnqps:.1f} queries/sec")
-    print(f"Υπολογισμένες Αποστάσεις     : {pnncomp:,}")
-    print(f"Ανάκληση (Recall)            : {pnnrecall:.2f}%")
+    print("=" * 50)
+    print("for Precise Nearest Neighbors")
+    print(f"Running Time              {pnn_time:.3f} Seconds")
+    print(f"Speed                     {pnnqps:.1f} queries/sec")
+    print(f"N of calculations         {pnncomp:,}")
+    print(f"Recall                    {pnnrecall:.2f}%")
     print("="*50)
 
 
@@ -167,8 +163,12 @@ train=sift_learn=retrievefvecs("sift/sift_learn.fvecs")
 Q=sift_query=retrievefvecs("sift/sift_query.fvecs")
 ground_truth=sift_groundtruth=retriveivecs("sift/sift_groundtruth.ivecs")
 
+with open("centroids.pkl", "rb") as f:
+    centroids = pkl.load(f)
+        
+with open("invertedindex.pkl", "rb") as f:
+    invertedindex = pkl.load(f)
 
-centroids,index= invertedindex(S,train,clusters)
-#inverted index krataei ta keys toy S pinaka !!!!!!
-evaluations(Q[:500],index,centroids,S,ground_truth[:500],k=100)
+print(type(invertedindex))
+evaluations(Q[:200],invertedindex,centroids,S,ground_truth[:200],k=100)
 #print("s",len(S),"Q",len(Q),"learn",len(sift_learn),"groundtruth",len(ground_truth))

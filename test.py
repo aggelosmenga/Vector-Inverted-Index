@@ -1,108 +1,4 @@
-faissindex= faiss.IndexIVFFlat(faiss.IndexFlatL2(128),128,80,faiss.METRIC_L2)
-
-faissindex.train(S)
-
-faissindex.add(S)
-
-faissindex.nprobe=4
-k=5
-istances, approx_results = faissindex.search(Q, 5)
-
-
-print("\nCalculating Accuracy...")
-true_neighbors = ground_truth[:, :k]
-num_queries = Q.shape[0]
-    
-total_matches = sum(len(np.intersect1d(true_neighbors[i], approx_results[i])) for i in range(num_queries))
-recall = (total_matches / (num_queries * k)) * 100
-
-print("==================================")
-print("        FINAL RESULTS             ")
-print("==================================")
-print(f"Queries processed: {num_queries}")
-print(f"Target matches:    {num_queries * k}")
-print(f"Actual matches:    {total_matches}")
-print(f"Recall (Accuracy): {recall:.2f}%")
-
-index=faiss.IndexIVFFlat(faiss.IndexFlatL2(dimension),dimension,clusters,faiss.METRIC_L2)
-
-index.train(S)
-index.add(S)
-
-
-distances,indices=index.search(Q,k=5)
-
-print(indices)
-"""
-
-
-
-
-
-def elbowrule(base, max_k=200):
-    step = 20
-    samplesize = min(20000, base.shape[0])
-    sample = base[np.random.permutation(base.shape[0])[:samplesize]]
-
-    kvals = list(range(20, max_k + 1, step))
-    distortions = []
-
-    print("Evaluating Elbow Rule (Percentage Improvement)")
-    print("-" * 55)
-    print(f"{'Clusters (k)':<15} | {'Distortion':<15} | {'Improvement %':<15}")
-    print("-" * 55)
-
-    for i, k in enumerate(kvals):
-        centroids, distortion = kmeans(sample, k)
-        distortions.append(distortion)
-
-        if i == 0:
-            # First run acts as the baseline, so there is no previous data to compare
-            print(f"{k:<15} | {distortion:<15.4f} | N/A (Baseline)")
-        else:
-            prev_distortion = distortions[i - 1]
-            
-            # Calculate the percentage drop in distortion compared to the last step
-            improvement = ((prev_distortion - distortion) / prev_distortion) * 100
-            
-            print(f"{k:<15} | {distortion:<15.4f} | -{improvement:.2f}%")
-
-
-
-            Μ= Omades cluster
-            P= ola ta clusters M<P eksetazei ta M kontinotera clusters
-
-            m is for approximate NN
-
-
-
-def nearestcentroids(q,centroids :np.ndarray,M:int):
-    #returns index of closest centroids
-    dist=np.linalg.norm(centroids-q,axis=1)
-    ind=np.argsort(dist)[:M] #returns m closest centroids
-    return ind
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    import numpy as np
+import numpy as np
 import time
 from sklearn.neighbors import NearestNeighbors
 import pickle as pkl
@@ -161,14 +57,12 @@ def ApproximateNearestNeighbors(q:np.ndarray,index:dict,centroids:np.ndarray,S:n
     approxresults=[]
     computations=0
     knn = NearestNeighbors(n_neighbors=k,algorithm='brute',n_jobs=-1)
+    clusternn= NearestNeighbors(n_neighbors=1000,algorithm='brute',n_jobs=-1)
     for i in range(len(q)):
 
-        #clusterdistances=np.linalg.norm(centroids-q[i],axis=1)
-        knn.fit(centroids)
-        clusterdistances,clusterindices=knn.kneighbors(q[i].reshape(1,-1))
-
+        clusternn.fit(centroids)
         
-
+        clusterdistances,clusterindices=clusternn.kneighbors(q[i].reshape(1,-1))
         dmin=clusterdistances[0]
 
         #λογικη πισω απο την αυτοματοποιηση:
@@ -179,8 +73,8 @@ def ApproximateNearestNeighbors(q:np.ndarray,index:dict,centroids:np.ndarray,S:n
             #αν ισχυει τοτε εισαγουμε το cluster στην αναζητηση, δηλαδη Μ = Μ+1
 
         clusters=[]
-        """"
-        print("CHECEEEEEEEEEEEEEEECK",type(clusterdistances))
+        clusterdistances.flatten()
+        print("hello",clusterdistances[0][0])
         for clustid in clusterdistances:
             dist=clusterdistances[clustid]
             if dist > (dmin * e): break
@@ -194,8 +88,7 @@ def ApproximateNearestNeighbors(q:np.ndarray,index:dict,centroids:np.ndarray,S:n
         
         vectorsforcheck=S[basekeys]
         knn.fit(vectorsforcheck)
-        distances,vectorindices= knn.kneighbors(q[i])
-        print(type(vectorindices),vectorindices)
+        distances,vectorindices= knn.kneighbors(q[i].reshape(1,-1))
         #distances=np.linalg.norm(vectorsforcheck-q[i],axis=1)
         #argument sort dhladh apothikeyei toys deiktes toy S poy exoyn to k kontinotero dianysma me to q[i] DEN EPISTREFEI TO VECTOR gia logoys mnhmh ypothetw lol 
         
