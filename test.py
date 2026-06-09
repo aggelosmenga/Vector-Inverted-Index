@@ -58,43 +58,38 @@ def ApproximateNearestNeighbors(q:np.ndarray,index:dict,centroids:np.ndarray,S:n
     computations=0
     knn = NearestNeighbors(n_neighbors=k,algorithm='brute',n_jobs=-1)
     clusternn= NearestNeighbors(n_neighbors=1000,algorithm='brute',n_jobs=-1)
-    for i in range(len(q)):
-
-        clusternn.fit(centroids)
-        
-        clusterdistances,clusterindices=clusternn.kneighbors(q[i].reshape(1,-1))
-        dmin=clusterdistances[0]
-
+    clusternn.fit(centroids)
+    
+    clusterdist,clusterindices=clusternn.kneighbors(q)
+    
+    print(clusterdist.shape)
         #λογικη πισω απο την αυτοματοποιηση:
             #1+ε Approximate nearest neighbor search για τα κοντινοτερα clusters
             #οριζουμε dmin το κοντινοτερο διανυσμα στο query μας
             #οριζουμε ενα tolerance ratio=1.5,αυτο σημαινει
             #για καθε cluster ελεγχουμε αν ισχυει η ανισοτητα d(q,c(m)) <= e * dmin 
-            #αν ισχυει τοτε εισαγουμε το cluster στην αναζητηση, δηλαδη Μ = Μ+1
+            #αν ισχυει τοτε εισαγουμε το cluster στην αναζητηση, δηλαδη Μ = Μ+1 
+    for i in range(len(q)):
+        dmin=clusterdist[i][0]
 
         clusters=[]
-        clusterdistances.flatten()
-        print("hello",clusterdistances[0][0])
-        for clustid in clusterdistances:
-            dist=clusterdistances[clustid]
-            if dist > (dmin * e): break
-        
+        for dist,clustid in zip(clusterdist[i],clusterindices[i]):
+            if dist > (dmin*e): break
             clusters.append(clustid)
-        #cluster index
-        print(len(clusters))
+
         basekeys=np.concatenate([index[c] for c in clusters])
-        
+            
         computations+=len(basekeys)
-        
+            
         vectorsforcheck=S[basekeys]
         knn.fit(vectorsforcheck)
         distances,vectorindices= knn.kneighbors(q[i].reshape(1,-1))
-        #distances=np.linalg.norm(vectorsforcheck-q[i],axis=1)
-        #argument sort dhladh apothikeyei toys deiktes toy S poy exoyn to k kontinotero dianysma me to q[i] DEN EPISTREFEI TO VECTOR gia logoys mnhmh ypothetw lol 
-        
-        #vectorindices=np.argsort(distances)[:k]
-        approxresults.append(basekeys[vectorindices])
-    
+            #distances=np.linalg.norm(vectorsforcheck-q[i],axis=1)
+            #argument sort dhladh apothikeyei toys deiktes toy S poy exoyn to k kontinotero dianysma me to q[i] DEN EPISTREFEI TO VECTOR gia logoys mnhmh ypothetw lol 
+            
+            #vectorindices=np.argsort(distances)[:k]
+            
+        approxresults.append(basekeys[vectorindices[0]])
     return approxresults,computations
     
 def PreciseNearestNeighbors(q,index:dict, centroids:np.ndarray,S:np.ndarray,k):
@@ -149,10 +144,10 @@ def evaluations(q,index,centroids,S,groundtruth,k):
 
     print("=" * 50)
     print("for Precise Nearest Neighbors")
-    print(f"Running Time              {pnn_time:.3f} Seconds")
-    print(f"Speed                     {pnnqps:.1f} queries/sec")
-    print(f"N of calculations         {pnncomp:,}")
-    print(f"Recall                    {pnnrecall:.2f}%")
+    print(f"Running Time             {pnn_time:.3f} Seconds")
+    print(f"Speed                    {pnnqps:.1f} queries/sec")
+    print(f"N of calculations        {pnncomp:,}")
+    print(f"Recall                   {pnnrecall:.2f}%")
     print("="*50)
 
 

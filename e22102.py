@@ -56,8 +56,6 @@ def invertedindex(S,train,nofclusters):
 def ApproximateNearestNeighbors(q:np.ndarray,index:dict,centroids:np.ndarray,S:np.ndarray,k,e=1.5):
     approxresults=[]
     computations=0
-    knn = NearestNeighbors(n_neighbors=k,algorithm='brute',n_jobs=-1)
-    clusternn= NearestNeighbors(n_neighbors=1000,algorithm='brute',n_jobs=-1)
     for i in range(len(q)):
 
         clusterdistances=np.linalg.norm(centroids-q[i],axis=1)
@@ -80,30 +78,35 @@ def ApproximateNearestNeighbors(q:np.ndarray,index:dict,centroids:np.ndarray,S:n
         
             clusters.append(clustid)
         #cluster index
-        print(len(clusters))
         basekeys=np.concatenate([index[c] for c in clusters])
         
         computations+=len(basekeys)
         
         vectorsforcheck=S[basekeys]
-        knn.fit(vectorsforcheck)
-        distances,vectorindices= knn.kneighbors(q[i].reshape(1,-1))
-        #distances=np.linalg.norm(vectorsforcheck-q[i],axis=1)
+
+        distances=np.linalg.norm(vectorsforcheck-q[i],axis=1)
         #argument sort dhladh apothikeyei toys deiktes toy S poy exoyn to k kontinotero dianysma me to q[i] DEN EPISTREFEI TO VECTOR gia logoys mnhmh ypothetw lol 
         
-        #vectorindices=np.argsort(distances)[:k]
+        vectorindices=np.argsort(distances)[:k]
         approxresults.append(basekeys[vectorindices])
-    
+    print(approxresults)
     return approxresults,computations
     
 def PreciseNearestNeighbors(q,index:dict, centroids:np.ndarray,S:np.ndarray,k):
-    computations=len(q) * len(S)
-    
-    knn = NearestNeighbors(n_neighbors=k,algorithm='brute',n_jobs=-1)
-    knn.fit(S)
-    distances,indices =knn.kneighbors(q)
+    results=[]
+    basekeys=np.concatenate(list(index.values()))
+   
+    computations=len(q)*len(basekeys)
 
-    return indices,computations
+    for i in range(len(q)):
+        distances=np.linalg.norm(S[basekeys]-q[i],axis=1)
+
+        vectorindices=np.argsort(distances)[:k]
+
+        results.append(basekeys[vectorindices])
+
+    return results,computations
+
 
 def evaluations(q,index,centroids,S,groundtruth,k):
     print("Testing phase of algorithms:")
@@ -170,5 +173,5 @@ with open("invertedindex.pkl", "rb") as f:
     invertedindex = pkl.load(f)
 
 print(type(invertedindex))
-evaluations(Q[:200],invertedindex,centroids,S,ground_truth[:200],k=100)
+evaluations(Q[:100],invertedindex,centroids,S,ground_truth[:100],k=100)
 #print("s",len(S),"Q",len(Q),"learn",len(sift_learn),"groundtruth",len(ground_truth))
