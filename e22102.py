@@ -1,6 +1,5 @@
 import numpy as np
 import time
-from sklearn.neighbors import NearestNeighbors
 import pickle as pkl
 #retrieve files and add them to a numpy array
 def retrievefvecs(file):
@@ -22,36 +21,6 @@ def retriveivecs(file):
 
     return data[:, 1:].copy()
 
-
-#inverted index creation
-""""
-def invertedindex(S,train,nofclusters):
-
-    centroids,_=kmeans2(train,nofclusters,minit='points')
-
-    invertedindex={i: [] for i in range(nofclusters)}
-
-    chunks=train.shape[0]
-
-    #χωρισμος των δεδομενων σε chunks
-    for i in range(0,S.shape[0],chunks):
-       
-        chunk=S[i :i+chunks]
-
-        distances=cdist(chunk,centroids,metric='euclidean')
-       
-       #closest centroids
-        nearest=np.argmin(distances,axis=1)
-        
-        for j, centroid_id in enumerate(nearest):
-            invertedindex[centroid_id].append(i + j)
-
-    
-    for i in range(nofclusters):
-        invertedindex[i]=np.array(invertedindex[i],dtype=np.int32)
-
-    return centroids,invertedindex"
-"""
 
 def ApproximateNearestNeighbors(q:np.ndarray,index:dict,centroids:np.ndarray,S:np.ndarray,k,e=1.5):
     approxresults=[]
@@ -89,7 +58,6 @@ def ApproximateNearestNeighbors(q:np.ndarray,index:dict,centroids:np.ndarray,S:n
         
         vectorindices=np.argsort(distances)[:k]
         approxresults.append(basekeys[vectorindices])
-    print(approxresults)
     return approxresults,computations
     
 def PreciseNearestNeighbors(q,index:dict, centroids:np.ndarray,S:np.ndarray,k):
@@ -172,6 +140,5 @@ with open("centroids.pkl", "rb") as f:
 with open("invertedindex.pkl", "rb") as f:
     invertedindex = pkl.load(f)
 
-print(type(invertedindex))
+
 evaluations(Q[:100],invertedindex,centroids,S,ground_truth[:100],k=100)
-#print("s",len(S),"Q",len(Q),"learn",len(sift_learn),"groundtruth",len(ground_truth))

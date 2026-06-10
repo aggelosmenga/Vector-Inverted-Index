@@ -2,6 +2,9 @@ import numpy as np
 from scipy.cluster.vq import kmeans2
 from scipy.spatial.distance import cdist
 import pickle as pkl
+
+#Script για τη δημιουργια inverted index
+
 #retrieve files and add them to a numpy array
 def retrievefvecs(file):
 
@@ -25,27 +28,28 @@ def retriveivecs(file):
 
 #inverted index creation
 def invertedindex(S,train,nofclusters):
-
+    #κανουμε train τον kmeans με τη χρηση του training set Που περιεχει το συνολο δεδομενων
     centroids,_=kmeans2(train,nofclusters,minit='points')
-
+    #το inverted index ειναι δομης dictionary οπου για καθε κλειδι υπαρχει μια λιστα που περιεχει ολα τα 
+    #κλειδια απο το συνολο S...δηλαδη δεν αποθηκευει τις τιμες αλλα τα Indexes του S
     invertedindex={i: [] for i in range(nofclusters)}
 
     chunks=train.shape[0]
 
-    #χωρισμος των δεδομενων σε chunks
+    #χωρισμος των δεδομενων σε chunks για πιο ευκολη επεξεργασια
     for i in range(0,S.shape[0],chunks):
-       
+        #τα πρωτα i μετα τα επομενα i + chunks ...
         chunk=S[i :i+chunks]
-
+        #εχοντας αποθηκευσει τα κεντρα βρισκουμε τα κοντινοτερα κεντρα για καθε chunks δεδομενων 
         distances=cdist(chunk,centroids,metric='euclidean')
        
        #closest centroids
         nearest=np.argmin(distances,axis=1)
-        
+        #μετραμε τα κοντινοτερα διανυσματα και τα τοποθετουμε ολα σε ενα cluster για καθε cluster θα εχουμε ~1000 διανυσματα/συσταδα 
         for j, centroid_id in enumerate(nearest):
             invertedindex[centroid_id].append(i + j)
 
-    
+    #μετατρεπουμε καθε λιστα σε Np array 
     for i in range(nofclusters):
         invertedindex[i]=np.array(invertedindex[i],dtype=np.int32)
 
@@ -63,7 +67,7 @@ ground_truth=sift_groundtruth=retriveivecs("sift/sift_groundtruth.ivecs")
 
 print("Inverted Index Creation and file save")
 centroids,index= invertedindex(S,train,clusters)
-    
+#χρηση της Pickle για δημιουργια αρχειων Pkl που θα χρησιμοποιηθουν στο προγραμμα     
 with open("centroids.pkl", "wb") as f:
     pkl.dump(centroids, f)
         

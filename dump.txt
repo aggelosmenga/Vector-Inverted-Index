@@ -280,3 +280,5 @@ with open("invertedindex.pkl", "rb") as f:
 print(type(invertedindex))
 evaluations(Q[:200],invertedindex,centroids,S,ground_truth[:200],k=100)
 #print("s",len(S),"Q",len(Q),"learn",len(sift_learn),"groundtruth",len(ground_truth))
+
+distances=np.linalg.norm(S[basekeys]-q[i],axis=1)
