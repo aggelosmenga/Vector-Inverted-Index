@@ -54,7 +54,6 @@ def ApproximateNearestNeighbors(q:np.ndarray,index:dict,centroids:np.ndarray,S:n
         vectorsforcheck=S[basekeys]
 
         distances=np.linalg.norm(vectorsforcheck-q[i],axis=1)
-        #argument sort dhladh apothikeyei toys deiktes toy S poy exoyn to k kontinotero dianysma me to q[i] DEN EPISTREFEI TO VECTOR gia logoys mnhmh ypothetw lol 
         
         vectorindices=np.argsort(distances)[:k]
         approxresults.append(basekeys[vectorindices])
