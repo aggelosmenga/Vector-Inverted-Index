@@ -130,7 +130,7 @@ def evaluations(q,index,centroids,S,groundtruth,k):
     #ιδια διαδικασια για Precise Nearest Neighbors
     pnnmatches=0
     for i in range(len(q)):
-        truepnn=groundtruth[i][:k] 
+        truepnn=groundtruth[i][:k]
         pnnNeighbors=pnn[i]
 
         commonpnn=np.intersect1d(truepnn,pnnNeighbors)
